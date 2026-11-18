@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Enquiries ───────────────────────────────────────
+    // Public visitors can CREATE enquiries (contact form submissions).
+    // Only authenticated admins can READ, UPDATE, or DELETE enquiries.
+    match /enquiries/{enquiryId} {
+      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'phone', 'service', 'message', 'status', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.email is string
+                    && request.resource.data.message is string
+                    && request.resource.data.status == 'new';
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // ─── Portfolio ───────────────────────────────────────
+    // Anyone can READ portfolio projects (public gallery).
+    // Only authenticated admins can CREATE, UPDATE, or DELETE.
+    match /portfolio/{projectId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // ─── Deny everything else ────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
